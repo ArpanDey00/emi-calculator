@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Loan EMI Calculator</title>
+  <style>
+    body{
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg,#4facfe,#00f2fe);
+      min-height:100vh;
+      margin:0;
+      padding:20px;
+    }
+    .box{
+      max-width:360px;
+      margin:40px auto;
+      background:#ffffff;
+      padding:20px;
+      border-radius:10px;
+      box-shadow:0 8px 20px rgba(0,0,0,0.25);
+    }
+    h3{
+      text-align:center;
+      color:#333;
+    }
+    input,button{
+      width:100%;
+      padding:10px;
+      margin-top:10px;
+      border-radius:6px;
+      border:1px solid #ccc;
+      font-size:14px;
+    }
+    button{
+      background:#4facfe;
+      color:white;
+      border:none;
+      font-weight:bold;
+      cursor:pointer;
+    }
+    button:hover{ background:#2f8dfc; }
+    .history{
+      margin-top:12px;
+      background:#f4f6ff;
+      padding:10px;
+      border-radius:6px;
+      font-size:13px;
+      max-height:120px;
+      overflow:auto;
+      display:none;
+    }
+  </style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login" class="box">
+  <h3>Login</h3>
+  <input id="lu" placeholder="Username">
+  <input id="lp" type="password" placeholder="Password">
+  <button onclick="doLogin()">Login</button>
+  <button onclick="showSignup()">Create Account</button>
+</div>
+
+<!-- SIGNUP -->
+<div id="signup" class="box" style="display:none;">
+  <h3>Signup</h3>
+  <input id="su" placeholder="Username">
+  <input id="sp" type="password" placeholder="Password">
+  <button onclick="doSignup()">Signup</button>
+  <button onclick="showLogin()">Back</button>
+</div>
+
+<!-- EMI -->
+<div id="emi" class="box" style="display:none;">
+  <h3>EMI Calculator</h3>
+
+  <input id="amt" placeholder="Loan Amount">
+  <input id="rate" placeholder="Interest Rate (%)">
+  <input id="yrs" placeholder="Years">
+
+  <button onclick="calc()">Calculate EMI</button>
+
+  <div id="out" style="margin-top:10px;"></div>
+
+  <!-- HISTORY BUTTONS -->
+  <button onclick="showHistory()">Show History</button>
+  <button onclick="clearHistory()" style="background:#777;">Clear History</button>
+
+  <!-- HISTORY BOX -->
+  <div id="historyBox" class="history"></div>
+
+  <button onclick="logout()" style="margin-top:15px;background:#444;">Logout</button>
+</div>
+
+<script>
+/* PAGE SWITCH */
+function showLogin(){
+  document.getElementById("login").style.display="block";
+  document.getElementById("signup").style.display="none";
+  document.getElementById("emi").style.display="none";
+}
+function showSignup(){
+  document.getElementById("login").style.display="none";
+  document.getElementById("signup").style.display="block";
+  document.getElementById("emi").style.display="none";
+}
+function showEmi(){
+  document.getElementById("login").style.display="none";
+  document.getElementById("signup").style.display="none";
+  document.getElementById("emi").style.display="block";
+  document.getElementById("historyBox").style.display="none";
+}
+
+/* SIGNUP */
+function doSignup(){
+  let u = document.getElementById("su").value.trim();
+  let p = document.getElementById("sp").value.trim();
+  if(!u || !p){
+    alert("Fill all fields");
+    return;
+  }
+  localStorage.setItem("userData", JSON.stringify({username:u,password:p}));
+  alert("Signup successful");
+  showLogin();
+}
+
+/* LOGIN */
+function doLogin(){
+  let data = JSON.parse(localStorage.getItem("userData"));
+  if(!data){
+    alert("Signup first");
+    return;
+  }
+  let u = document.getElementById("lu").value.trim();
+  let p = document.getElementById("lp").value.trim();
+
+  if(u === data.username && p === data.password){
+    showEmi();
+  } else {
+    alert("Wrong username or password");
+  }
+}
+
+/* LOGOUT */
+function logout(){
+  showLogin();
+}
+
+/* EMI + TOTALS + SAVE HISTORY */
+function calc(){
+  let P = +document.getElementById("amt").value;
+  let r = +document.getElementById("rate").value / 12 / 100;
+  let n = +document.getElementById("yrs").value * 12;
+
+  if(!P || !r || !n){
+    alert("Fill all fields");
+    return;
+  }
+
+  let emi = P*r*Math.pow(1+r,n)/(Math.pow(1+r,n)-1);
+  let totalPayment = emi*n;
+  let totalInterest = totalPayment - P;
+
+  document.getElementById("out").innerHTML = `
+    <b>Monthly EMI:</b> ₹${emi.toFixed(2)}<br>
+    <b>Total Interest:</b> ₹${totalInterest.toFixed(2)}<br>
+    <b>Total Payment:</b> ₹${totalPayment.toFixed(2)}
+  `;
+
+  saveHistory(P,totalInterest,totalPayment);
+}
+
+/* SAVE HISTORY */
+function saveHistory(p,i,t){
+  let arr = JSON.parse(localStorage.getItem("emi_history")) || [];
+  arr.push(`Loan ₹${p} | Interest ₹${i.toFixed(0)} | Total ₹${t.toFixed(0)}`);
+  localStorage.setItem("emi_history", JSON.stringify(arr));
+}
+
+/* SHOW HISTORY */
+function showHistory(){
+  let box = document.getElementById("historyBox");
+  let arr = JSON.parse(localStorage.getItem("emi_history")) || [];
+  box.innerHTML = "<b>History:</b><br>" + (arr.length ? arr.join("<br>") : "No records");
+  box.style.display = "block";
+}
+
+/* CLEAR HISTORY */
+function clearHistory(){
+  localStorage.removeItem("emi_history");
+  document.getElementById("historyBox").innerHTML = "History cleared";
+  document.getElementById("historyBox").style.display = "block";
+}
+</script>
+
+</body>
+</html>
